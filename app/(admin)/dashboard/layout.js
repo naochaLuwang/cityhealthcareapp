@@ -1,5 +1,7 @@
+"use client";
 import Navbar from "@/components/admin/Navbar";
 import Sidebar from "@/components/admin/Sidebar";
+import { withAuth } from "@/utils/requireAuth";
 
 const DashboardLayout = ({ children }) => {
   return (
@@ -13,4 +15,4 @@ const DashboardLayout = ({ children }) => {
   );
 };
 
-export default DashboardLayout;
+export default withAuth(DashboardLayout);

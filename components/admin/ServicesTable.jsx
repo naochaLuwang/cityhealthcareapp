@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { XCircle } from "lucide-react";
+
+import Link from "next/link";
+import { FilePenLine } from "lucide-react";
 
 const ServiceTable = () => {
   const [services, setServices] = useState([]);
@@ -40,7 +42,7 @@ const ServiceTable = () => {
               Service Name
             </th>
             <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
-              Description
+              TAT
             </th>
             <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
               Status
@@ -48,19 +50,39 @@ const ServiceTable = () => {
             <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
               Is Popular
             </th>
-            <th className="px-6 py-3 bg-gray-50"></th>
+            <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
+              Prices
+            </th>
+            <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
+              Actions
+            </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="text-xs bg-white divide-y divide-gray-200">
           {services.map((service) => (
             <tr key={service.id}>
-              <td className="px-6 py-4 whitespace-no-wrap">
+              <td className="px-6 py-4 font-medium whitespace-no-wrap">
                 {service.serviceName}
               </td>
-              <td className="px-6 py-4 whitespace-no-wrap">
-                {service.description}
+              <td className="px-6 py-4 font-medium whitespace-no-wrap">
+                {service.turnaroundtime}
               </td>
-              <td className="px-6 py-4 whitespace-no-wrap">{service.status}</td>
+
+              <td className="px-6 py-4 w-fit">
+                {service.status === "active" && (
+                  <div className="flex items-center px-4 py-2 bg-green-500 rounded-full w-fit">
+                    <div className="w-3 h-3 mr-2 bg-white rounded-full"></div>
+                    <div className="font-bold text-white uppercase">
+                      {service.status}
+                    </div>
+                  </div>
+                )}
+                {service.status !== "active" && (
+                  <div className="px-2 py-1 text-black uppercase bg-yellow-500 rounded-full">
+                    {service.status}
+                  </div>
+                )}
+              </td>
               <td className="px-6 py-4 whitespace-no-wrap">
                 {service.isPopular ? "Yes" : "No"}
               </td>
@@ -71,6 +93,14 @@ const ServiceTable = () => {
                 >
                   View Prices
                 </button>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <Link
+                  href={`/dashboard/services/edit-service/${service.id}`}
+                  className="text-indigo-600 hover:text-indigo-900"
+                >
+                  <FilePenLine />
+                </Link>
               </td>
             </tr>
           ))}

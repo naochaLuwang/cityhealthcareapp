@@ -1,3 +1,4 @@
+"use client";
 import DiagnosticCentersCard from "@/components/admin/CenterCard";
 
 const Dashboard = () => {
