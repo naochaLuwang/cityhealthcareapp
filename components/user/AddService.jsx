@@ -1,6 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getDocs, collection, doc, getDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  getDoc,
+  getDocs,
+  doc,
+} from "firebase/firestore";
+
 import { db } from "@/config/firebase";
 import {
   ArrowLeftCircle,
@@ -8,6 +16,7 @@ import {
   User,
   ShoppingBag,
 } from "lucide-react";
+import { X } from "lucide-react";
 
 const AddService = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,6 +41,72 @@ const AddService = () => {
   const [addedServices, setAddedServices] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [collectionFeeChecked, setCollectionFeeChecked] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
+
+  // Handler for collection fee checkbox
+  const handleCollectionFeeChange = () => {
+    setCollectionFeeChecked(!collectionFeeChecked);
+  };
+
+  // Handler for terms and conditions checkbox
+  const handleTermsChange = () => {
+    setTermsChecked(!termsChecked);
+  };
+
+  const handleBookHomeCollection = async () => {
+    try {
+      // Prepare order data
+      const orderData = {
+        basicInfo: basicInfo,
+        services: addedServices.map((service) => ({
+          serviceName: service.serviceName,
+          price: service.price,
+          id: service.serviceId,
+          centerId: service.centerId,
+          centerName: service.centerName,
+          // Add any other related info here
+        })),
+        totalBillAmount: totalPrice,
+        status: "booked", // Initial status
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      // Add the order data to Firestore under the "orders" collection
+      const orderRef = await addDoc(collection(db, "orders"), orderData);
+      console.log("Order added with ID: ", orderRef.id);
+
+      // Add initial status update as a subcollection
+      const statusUpdateData = {
+        status: "booked",
+        updatedBy: "user", // Update with the user's ID or name
+        updatedAt: serverTimestamp(),
+      };
+
+      // Add the initial status update to the subcollection "statuses"
+      await addDoc(collection(orderRef, "statuses"), statusUpdateData);
+
+      // Reset the form and state after successful booking
+      setBasicInfo({
+        salutation: "",
+        name: "",
+        year: "",
+        month: "",
+        day: "",
+        gender: "",
+        city: "",
+        address: "",
+      });
+      setAddedServices([]);
+      setTotalPrice(0);
+      setCollectionFeeChecked(false);
+      setTermsChecked(false);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Error adding order: ", error);
+    }
+  };
 
   const nextPage = () => {
     setCurrentPage(currentPage + 1);
@@ -40,6 +115,7 @@ const AddService = () => {
   const prevPage = () => {
     setCurrentPage(currentPage - 1);
   };
+
   useEffect(() => {
     const fetchCenters = async () => {
       const centersSnapshot = await getDocs(collection(db, "centers"));
@@ -83,6 +159,8 @@ const AddService = () => {
         priceData.prices.find((p) => p.centerId === selectedCenter)?.price ||
         "Price not found";
       setPrice(price);
+      // Set the serviceName state with the selected service's name
+      setServiceName(service.serviceName);
     }
     setDropdownOpen(false);
   };
@@ -104,15 +182,44 @@ const AddService = () => {
       const service = services.find(
         (service) => service.id === selectedService
       );
-      const addedService = {
-        serviceName: service.serviceName,
-        centerName:
-          centers.find((center) => center.id === selectedCenter)?.name ||
-          "Center not found",
-        price: price,
-      };
-      setAddedServices([...addedServices, addedService]);
-      setTotalPrice((prevPrice) => prevPrice + parseFloat(price));
+      // Check if the service is already added
+      const serviceExists = addedServices.some(
+        (addedService) =>
+          addedService.serviceId === selectedService &&
+          addedService.centerId === selectedCenter
+      );
+      if (serviceExists) {
+        // Service already added, prompt user to confirm
+        const confirmAddService = window.confirm(
+          "This service has already been added. Do you want to add it again?"
+        );
+        if (confirmAddService) {
+          const addedService = {
+            serviceId: selectedService,
+            centerId: selectedCenter,
+            serviceName: service.serviceName,
+            centerName:
+              centers.find((center) => center.id === selectedCenter)?.name ||
+              "Center not found",
+            price: price,
+          };
+          setAddedServices([...addedServices, addedService]);
+          setTotalPrice((prevPrice) => prevPrice + parseFloat(price));
+        }
+      } else {
+        // Service not added yet, add it directly
+        const addedService = {
+          serviceId: selectedService,
+          centerId: selectedCenter,
+          serviceName: service.serviceName,
+          centerName:
+            centers.find((center) => center.id === selectedCenter)?.name ||
+            "Center not found",
+          price: price,
+        };
+        setAddedServices([...addedServices, addedService]);
+        setTotalPrice((prevPrice) => prevPrice + parseFloat(price));
+      }
       setServiceName("");
       setPrice("");
       setMatchingServices([]);
@@ -234,7 +341,7 @@ const AddService = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between space-x-7">
+            <div className="flex items-center justify-between">
               {/* Age */}
               <div className="mb-4">
                 <label htmlFor="age" className="block mb-2">
@@ -278,7 +385,7 @@ const AddService = () => {
               </div>
 
               {/* Gender dropdown */}
-              <div className="w-full mb-4">
+              <div className="w-full mb-4 pl-9">
                 <label htmlFor="gender" className="block mb-2">
                   Gender
                 </label>
@@ -360,98 +467,227 @@ const AddService = () => {
       )}
 
       {currentPage == 2 && (
-        <div className="max-w-lg p-4 mx-auto">
-          {/* Center dropdown */}
-          <select
-            value={selectedCenter}
-            onChange={(e) => handleCenterSelect(e.target.value)}
-            disabled={selectedCenter !== ""}
-            className="w-full p-2 mb-4 border border-gray-300 rounded"
-          >
-            <option value="">Select Center</option>
-            {centers.map((center) => (
-              <option key={center.id} value={center.id}>
-                {center.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col w-full p-4 mx-auto">
+          <div className="w-[50%]">
+            <div className="flex-1 mr-4">
+              {/* Center dropdown */}
+              <div className="w-full mb-4">
+                <label htmlFor="center" className="block mb-2">
+                  Center
+                </label>
+                <select
+                  id="center"
+                  value={selectedCenter}
+                  onChange={(e) => handleCenterSelect(e.target.value)}
+                  disabled={selectedCenter !== ""}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="">Select Center</option>
+                  {centers.map((center) => (
+                    <option key={center.id} value={center.id}>
+                      {center.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Input field with matching services dropdown */}
-          <div className="relative mb-4">
-            <input
-              type="text"
-              value={serviceName}
-              onChange={handleServiceInputChange}
-              onFocus={() => setDropdownOpen(true)}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Search for a service..."
-            />
-            {dropdownOpen && matchingServices.length > 0 && (
-              <div className="absolute left-0 z-10 w-full bg-white border border-gray-300 rounded top-full">
-                {matchingServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className="p-2 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleServiceSelect(service.id)}
-                  >
-                    {service.serviceName}
+              {/* Input field with matching services dropdown */}
+              <div className="relative w-full mb-4">
+                <label htmlFor="service" className="block mb-2">
+                  Service
+                </label>
+                <input
+                  type="text"
+                  id="service"
+                  value={serviceName}
+                  onChange={handleServiceInputChange}
+                  onFocus={() => setDropdownOpen(true)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="Search for a service..."
+                />
+                {dropdownOpen && matchingServices.length > 0 && (
+                  <div className="absolute left-0 z-10 w-full bg-white border border-gray-300 rounded top-full">
+                    {matchingServices.map((service) => (
+                      <div
+                        key={service.id}
+                        className="p-2 cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleServiceSelect(service.id)}
+                      >
+                        {service.serviceName}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Display price and Add Service button */}
+              {selectedService && selectedCenter && (
+                <div className="flex items-center w-full mb-4">
+                  <div className="flex-1">
+                    <label className="block mb-2">
+                      Price: {price !== "" ? price : "Price not found"}
+                    </label>
+                  </div>
+                  <div>
+                    <button
+                      onClick={handleAddService}
+                      className="px-4 py-2 text-white bg-blue-500 rounded"
+                    >
+                      Add Service
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="w-[50%]">
+            {addedServices.length > 0 && (
+              <div className="flex-1 w-full">
+                {/* Checkout summary */}
+                <div className="p-4 border border-gray-200 rounded-lg shadow-md">
+                  <h2 className="mb-4 text-lg font-semibold">Services</h2>
+                  {/* Service items */}
+                  <div className="h-auto overflow-y-auto max-h-56">
+                    {addedServices.map((service, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between py-2 border-b border-gray-200"
+                      >
+                        <div>
+                          <h3 className="text-sm font-medium">
+                            {service.serviceName}
+                          </h3>
+                          <p className="text-xs text-gray-600">
+                            {service.centerName}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-medium">
+                            ₹{service.price}
+                          </p>
+                          <button
+                            onClick={() =>
+                              handleRemoveService(index, service.price)
+                            }
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Total Price */}
+                  <div className="flex justify-end mt-4 space-x-3">
+                    <h3 className="text-sm font-medium">Total Price:</h3>
+                    <p className="text-sm font-semibold">₹{totalPrice}</p>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
-
-          {/* Display price */}
-          <div className="mb-4">
-            {price !== "" ? `Price: ${price}` : "Price not found"}
-          </div>
-
-          {/* Add button */}
-          {selectedService && selectedCenter && (
+            {/* Continue to next form button */}
             <button
-              onClick={handleAddService}
-              className="px-4 py-2 mb-4 text-white bg-blue-500 rounded"
+              onClick={() => setCurrentPage(3)}
+              className="px-4 py-2 text-white bg-blue-500 rounded"
             >
-              Add Service
+              Continue
             </button>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* Display added services in a table */}
-          <table className="w-full mb-4">
-            <thead>
-              <tr>
-                <th className="p-2 border border-gray-300">Service Name</th>
-                <th className="p-2 border border-gray-300">Center Name</th>
-                <th className="p-2 border border-gray-300">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {addedServices.map((service, index) => (
-                <tr key={index}>
-                  <td className="p-2 border border-gray-300">
-                    {service.serviceName}
-                  </td>
-                  <td className="p-2 border border-gray-300">
-                    {service.centerName}
-                  </td>
-                  <td className="p-2 border border-gray-300">
-                    {service.price}
-                  </td>
-                  <td className="p-2 border border-gray-300">
-                    <button
-                      onClick={() => handleRemoveService(index, service.price)}
-                      className="px-2 py-1 text-white bg-red-500 rounded"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {currentPage === 3 && (
+        <div className="flex flex-col w-full p-4 mx-auto">
+          {/* Display basic information */}
+          <div className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Basic Information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <p>
+                  <strong>Salutation:</strong> {basicInfo.salutation}
+                </p>
+                <p>
+                  <strong>Name:</strong> {basicInfo.firstName}{" "}
+                  {basicInfo.lastName}
+                </p>
+                <p>
+                  <strong>Age:</strong> {basicInfo.year} Years,{" "}
+                  {basicInfo.month} Months, {basicInfo.day} Days
+                </p>
+              </div>
+              <div className="flex flex-col">
+                <p>
+                  <strong>Gender:</strong> {basicInfo.gender}
+                </p>
+                <p>
+                  <strong>City:</strong> {basicInfo.city}
+                </p>
+                <p>
+                  <strong>Address:</strong> {basicInfo.address}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          {/* Display total price */}
-          <div className="font-bold">Total Price: {totalPrice}</div>
+          {/* Display added services */}
+          <div className="h-auto mb-8 overflow-y-auto max-h-72">
+            <h2 className="mb-4 text-lg font-semibold">Added Services</h2>
+            {addedServices.map((service, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between py-2 border-b border-gray-200"
+              >
+                <div>
+                  <h3 className="text-sm font-medium">{service.serviceName}</h3>
+                  <p className="text-xs text-gray-600">{service.centerName}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm font-medium">₹{service.price}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Collection fee and terms checkboxes */}
+          <div className="mb-4">
+            <label className="inline-flex items-center">
+              <input
+                type="checkbox"
+                className="text-blue-500 form-checkbox"
+                checked={collectionFeeChecked}
+                onChange={handleCollectionFeeChange}
+              />
+              <span className="ml-2">
+                A collection fee of rupees 100 may be levied
+              </span>
+            </label>
+          </div>
+          <div className="mb-4">
+            <label className="inline-flex items-center">
+              <input
+                type="checkbox"
+                className="text-blue-500 form-checkbox"
+                checked={termsChecked}
+                onChange={handleTermsChange}
+              />
+              <span className="ml-2">
+                I understand the terms and conditions
+              </span>
+            </label>
+          </div>
+
+          {/* Book home collection button */}
+          <button
+            onClick={handleBookHomeCollection}
+            disabled={!collectionFeeChecked || !termsChecked}
+            className={`px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 ${
+              collectionFeeChecked && termsChecked
+                ? ""
+                : "opacity-50 cursor-not-allowed"
+            }`}
+          >
+            Book Home Collection
+          </button>
         </div>
       )}
     </div>

@@ -1,4 +1,6 @@
+"use client";
 import AddService from "@/components/user/AddService";
+import { withAuth } from "@/utils/authUser";
 import React from "react";
 
 const BookHomeCollection = () => {
@@ -12,4 +14,4 @@ const BookHomeCollection = () => {
   );
 };
 
-export default BookHomeCollection;
+export default withAuth(BookHomeCollection);

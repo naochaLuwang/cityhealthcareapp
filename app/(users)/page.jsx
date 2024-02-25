@@ -8,6 +8,7 @@ import Cons from "@/components/user/Cons";
 
 const Home = () => {
   const [popularServices, setPopularServices] = useState([]);
+  const [loading, setLoading] = useState(true); // Added loading state
 
   useEffect(() => {
     const fetchPopularServices = async () => {
@@ -21,6 +22,7 @@ const Home = () => {
         ...doc.data(),
       }));
       setPopularServices(services);
+      setLoading(false); // Set loading to false when services are fetched
     };
 
     fetchPopularServices();
@@ -39,17 +41,43 @@ const Home = () => {
         <h1 className="text-2xl font-medium tracking-wide">
           Popular Tests / Packages
         </h1>
-        <div className="grid grid-cols-4 gap-4">
-          {popularServices.map((service) => (
-            <TestCard
-              key={service.id}
-              testName={service.serviceName}
-              description={service.description}
-              turnaroundTime={service.department}
-              imageUrl={service.imageUrl}
-            />
-          ))}
-        </div>
+        {loading ? ( // Conditional rendering based on loading state
+          <div className="grid grid-cols-4 gap-4">
+            {/* Skeleton loading items */}
+            {[...Array(8)].map((_, index) => (
+              <div
+                className="flex flex-col h-auto p-6 mt-10 space-y-2 border rounded-lg shadow-md w-80 animate-pulse"
+                key={index}
+              >
+                <div className="w-3/4 h-6 bg-gray-300 rounded"></div>
+                <div className="w-1/2 h-4 bg-gray-300 rounded"></div>
+                <div className="w-1/2 h-4 bg-gray-300 rounded"></div>
+                <div className="w-1/2 h-4 bg-gray-300 rounded"></div>
+                <div className="flex items-center space-x-2 w-fit">
+                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                  <div className="w-1/2 h-4 bg-gray-300 rounded"></div>
+                </div>
+                <div className="flex items-center justify-between w-full">
+                  <div className="h-8 bg-blue-900 rounded-md shadow-sm w-36"></div>
+                  <div className="w-20 h-4 bg-blue-900 rounded-md"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-4">
+            {/* Actual content */}
+            {popularServices.map((service) => (
+              <TestCard
+                key={service.id}
+                testName={service.serviceName}
+                description={service.description}
+                turnaroundTime={service.department}
+                imageUrl={service.imageUrl}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <Cons />
