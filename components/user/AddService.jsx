@@ -7,6 +7,10 @@ import {
   getDoc,
   getDocs,
   doc,
+  setDoc,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 
 import { db } from "@/config/firebase";
@@ -53,11 +57,38 @@ const AddService = () => {
   const handleTermsChange = () => {
     setTermsChecked(!termsChecked);
   };
+  const getNextBillNumber = async () => {
+    try {
+      // Query the existing orders
+      const ordersSnapshot = await getDocs(
+        query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(1))
+      );
 
+      let count = 1;
+      if (!ordersSnapshot.empty) {
+        const lastOrder = ordersSnapshot.docs[0].data();
+        if (lastOrder.billNumber) {
+          // Extract the count from the last order's bill number
+          count = parseInt(lastOrder.billNumber.split("-")[1]) + 1;
+        }
+      }
+
+      return `CHC-${count}`;
+    } catch (error) {
+      console.error("Error getting next bill number: ", error);
+    }
+  };
+
+  // Handler for booking home collection
   const handleBookHomeCollection = async () => {
     try {
+      // Generate bill number
+      const billNumber = await getNextBillNumber();
+      console.log("Generated Bill Number:", billNumber); //
+
       // Prepare order data
       const orderData = {
+        billNumber: billNumber,
         basicInfo: basicInfo,
         services: addedServices.map((service) => ({
           serviceName: service.serviceName,
@@ -65,7 +96,6 @@ const AddService = () => {
           id: service.serviceId,
           centerId: service.centerId,
           centerName: service.centerName,
-          // Add any other related info here
         })),
         totalBillAmount: totalPrice,
         status: "booked", // Initial status
@@ -76,16 +106,6 @@ const AddService = () => {
       // Add the order data to Firestore under the "orders" collection
       const orderRef = await addDoc(collection(db, "orders"), orderData);
       console.log("Order added with ID: ", orderRef.id);
-
-      // Add initial status update as a subcollection
-      const statusUpdateData = {
-        status: "booked",
-        updatedBy: "user", // Update with the user's ID or name
-        updatedAt: serverTimestamp(),
-      };
-
-      // Add the initial status update to the subcollection "statuses"
-      await addDoc(collection(orderRef, "statuses"), statusUpdateData);
 
       // Reset the form and state after successful booking
       setBasicInfo({
