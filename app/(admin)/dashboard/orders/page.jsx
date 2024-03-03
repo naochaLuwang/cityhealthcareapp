@@ -227,14 +227,16 @@ const OrdersPage = () => {
   };
 
   return (
-    <div>
+    <div className="w-full py-10">
       <h1 className="text-3xl font-bold">Orders</h1>
       <table className="w-full mt-4 border border-collapse border-gray-300">
-        <thead>
+        <thead className="text-sm">
           <tr className="bg-gray-200">
             <th className="px-4 py-2">ID</th>
             <th className="px-4 py-2">Name</th>
             <th className="px-4 py-2">Services</th>
+            <th className="px-4 py-2">Centre</th>
+
             <th className="px-4 py-2">Bill Amount</th>
             <th className="px-4 py-2">Status</th>
             <th className="px-4 py-2">Action</th>
@@ -242,11 +244,11 @@ const OrdersPage = () => {
         </thead>
         <tbody>
           {orders.map((order) => (
-            <tr key={order.id}>
-              <td className="px-4 py-2 border border-gray-300">
+            <tr key={order.id} className="text-xs">
+              <td className="w-16 px-2 py-2 border border-gray-300">
                 {order.billNumber}
               </td>
-              <td className="px-4 py-2 border border-gray-300">
+              <td className="px-4 py-2 border border-gray-300 w-52">
                 {order.basicInfo.firstName}
               </td>
               <td className="px-4 py-2 border border-gray-300">

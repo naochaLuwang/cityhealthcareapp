@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getDocs, collection, setDoc, doc, addDoc } from "firebase/firestore";
+import { getDocs, collection, addDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,9 @@ const AddServiceForm = () => {
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState("active");
   const [isPopular, setIsPopular] = useState(false);
+  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [parametersCovered, setParametersCovered] = useState([]);
+  const [parameterName, setParameterName] = useState("");
   const [prices, setPrices] = useState([]);
   const router = useRouter();
 
@@ -68,6 +71,19 @@ const AddServiceForm = () => {
     setPrices(updatedPrices);
   };
 
+  const handleAddParameter = () => {
+    if (parameterName) {
+      setParametersCovered([...parametersCovered, parameterName]);
+      setParameterName("");
+    }
+  };
+
+  const handleRemoveParameter = (index) => {
+    const updatedParameters = [...parametersCovered];
+    updatedParameters.splice(index, 1);
+    setParametersCovered(updatedParameters);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -89,6 +105,8 @@ const AddServiceForm = () => {
         department: selectedDepartment,
         status,
         isPopular,
+        specialInstructions,
+        parametersCovered,
         prices,
       });
 
@@ -103,6 +121,8 @@ const AddServiceForm = () => {
         description: "",
         status: "active",
         isPopular: false,
+        specialInstructions: "",
+        parametersCovered: [],
         prices: [],
       });
 
@@ -153,7 +173,15 @@ const AddServiceForm = () => {
               rows={3}
             />
 
-            <br />
+            <label htmlFor="specialInstructions">Special Instructions:</label>
+            <textarea
+              id="specialInstructions"
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              className="block w-full p-2 mt-2 border rounded-lg border-slate-500 focus:outline-none"
+              rows={3}
+            />
+
             <label htmlFor="center">Center:</label>
             <select
               id="center"
@@ -209,6 +237,41 @@ const AddServiceForm = () => {
                 className="ml-2 "
               />
             </label>
+            <label htmlFor="parametersCovered">Parameters Covered:</label>
+            <div className="flex">
+              <input
+                type="text"
+                id="parameterName"
+                value={parameterName}
+                onChange={(e) => setParameterName(e.target.value)}
+                className="block p-2 border rounded-lg border-slate-500 focus:outline-none"
+                placeholder="Parameter Name"
+              />
+              <button
+                type="button"
+                onClick={handleAddParameter}
+                className="px-4 py-2 ml-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300"
+              >
+                Add Parameter
+              </button>
+            </div>
+            {parametersCovered.length > 0 && (
+              <ul className="mt-2">
+                {parametersCovered.map((parameter, index) => (
+                  <li key={index} className="flex items-center">
+                    <span>{parameter}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveParameter(index)}
+                      className="ml-2 text-red-500 hover:text-red-700 focus:outline-none"
+                    >
+                      <XCircle size={20} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <button
               type="submit"
               className="px-4 py-2 mt-4 text-white bg-green-500 rounded-lg hover:bg-green-600 focus:outline-none focus:ring focus:border-green-300"

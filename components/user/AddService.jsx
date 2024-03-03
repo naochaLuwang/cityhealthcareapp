@@ -15,12 +15,14 @@ import {
 
 import { db } from "@/config/firebase";
 import {
-  ArrowLeftCircle,
   ArrowRightCircle,
+  Eye,
+  CheckCircle,
   User,
   ShoppingBag,
 } from "lucide-react";
 import { X } from "lucide-react";
+import { motion } from "framer-motion";
 
 const AddService = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,6 +49,15 @@ const AddService = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [collectionFeeChecked, setCollectionFeeChecked] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
+
+  const tickVariants = {
+    hidden: { opacity: 0, pathLength: 0 },
+    visible: {
+      opacity: 1,
+      pathLength: 1,
+      transition: { duration: 0.5 },
+    },
+  };
 
   // Handler for collection fee checkbox
   const handleCollectionFeeChange = () => {
@@ -261,43 +272,161 @@ const AddService = () => {
   };
 
   return (
-    <div>
+    <div className="w-full h-[85vh]">
       {/* Breadcrumb navigation */}
-      <div className="flex items-center mt-5 mb-4 space-x-2">
-        {/* Basic information */}
+      <div className="flex items-center mt-5 mb-4 space-x-2 transition duration-300">
+        {/* Step 1: Basic Information */}
         <div
-          className={`flex items-center space-x-2 cursor-pointer transition duration-300 ${
+          className={`flex items-center space-x-2 cursor-pointer ${
             currentPage === 1 ? "font-bold text-lg" : "text-gray-400"
           }`}
-          onClick={prevPage}
+          onClick={() => setCurrentPage(1)}
         >
           <User
             size={24}
             className={`${
               currentPage === 1 ? "text-blue-500" : "text-gray-300"
-            } transform hover:scale-110`}
+            } transform hover:scale-110 transition duration-300`}
           />
           <span>Basic Information</span>
         </div>
-        {/* Add service */}
+
+        {/* Separator */}
+        <div className="flex items-center justify-center">
+          <div
+            className={`h-1 w-16 bg-gray-300 ${
+              currentPage >= 2 ? "bg-blue-500" : ""
+            } transition duration-300`}
+          ></div>
+        </div>
+
+        {/* Step 2: Add Service */}
         <div
-          className={`flex items-center space-x-2 cursor-pointer transition duration-300 ${
-            currentPage === 2 ? "font-bold" : "text-gray-400"
+          className={`flex items-center space-x-2 cursor-pointer ${
+            currentPage === 2 ? "font-bold text-lg" : "text-gray-400"
           }`}
+          onClick={() => setCurrentPage(2)}
         >
+          {/* Tick animation */}
+          <motion.svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className={`${
+              currentPage > 2 ? "text-blue-500" : "text-gray-300"
+            } transform hover:scale-110 transition duration-300`}
+            width="24"
+            height="24"
+            initial="hidden"
+            animate={currentPage > 2 ? "visible" : "hidden"}
+            variants={tickVariants}
+          >
+            <motion.path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              d="M6 12l4 4L18 6"
+            />
+          </motion.svg>
+
           <ShoppingBag
             size={24}
             className={`${
               currentPage === 2 ? "text-blue-500" : "text-gray-300"
-            } transform hover:scale-110`}
+            } transform hover:scale-110 transition duration-300`}
           />
           <span>Add Service</span>
-          <ArrowRightCircle
+        </div>
+
+        {/* Separator */}
+        <div className="flex items-center justify-center">
+          <div
+            className={`h-1 w-16 bg-gray-300 ${
+              currentPage >= 3 ? "bg-blue-500" : ""
+            } transition duration-300`}
+          ></div>
+        </div>
+
+        {/* Step 3: Preview Order */}
+        <div
+          className={`flex items-center space-x-2 cursor-pointer ${
+            currentPage === 3 ? "font-bold text-lg" : "text-gray-400"
+          }`}
+          onClick={() => setCurrentPage(3)}
+        >
+          {/* Tick animation */}
+          <motion.svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className={`${
+              currentPage > 3 ? "text-blue-500" : "text-gray-300"
+            } transform hover:scale-110 transition duration-300`}
+            width="24"
+            height="24"
+            initial="hidden"
+            animate={currentPage > 3 ? "visible" : "hidden"}
+            variants={tickVariants}
+          >
+            <motion.path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              d="M6 12l4 4L18 6"
+            />
+          </motion.svg>
+
+          <Eye
             size={24}
             className={`${
-              currentPage === 2 ? "text-blue-500" : "text-gray-300"
-            } transform hover:scale-110`}
+              currentPage === 3 ? "text-blue-500" : "text-gray-300"
+            } transform hover:scale-110 transition duration-300`}
           />
+          <span>Preview Order</span>
+        </div>
+
+        {/* Separator */}
+        <div className="flex items-center justify-center">
+          <div
+            className={`h-1 w-16 bg-gray-300 ${
+              currentPage >= 4 ? "bg-blue-500" : ""
+            } transition duration-300`}
+          ></div>
+        </div>
+
+        {/* Step 4: Booking Confirmed */}
+        <div
+          className={`flex items-center space-x-2 cursor-pointer ${
+            currentPage === 4 ? "font-bold text-lg" : "text-gray-400"
+          }`}
+          onClick={() => setCurrentPage(4)}
+        >
+          {/* Tick animation */}
+          <motion.svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className={`${
+              currentPage === 4 ? "text-blue-500" : "text-gray-300"
+            } transform hover:scale-110 transition duration-300`}
+            width="24"
+            height="24"
+            initial="hidden"
+            animate={currentPage === 4 ? "visible" : "hidden"}
+            variants={tickVariants}
+          >
+            <motion.path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              d="M6 12l4 4L18 6"
+            />
+          </motion.svg>
+
+          <CheckCircle
+            size={24}
+            className={`${
+              currentPage === 4 ? "text-blue-500" : "text-gray-300"
+            } transform hover:scale-110 transition duration-300`}
+          />
+          <span>Booking Confirmed</span>
         </div>
       </div>
 

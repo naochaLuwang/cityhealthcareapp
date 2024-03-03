@@ -1,15 +1,17 @@
-"use client";
 // components/ServiceTable.js
+"use client";
 import { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
-
 import Link from "next/link";
 import { FilePenLine } from "lucide-react";
 
 const ServiceTable = () => {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [servicesPerPage] = useState(10);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -25,16 +27,25 @@ const ServiceTable = () => {
     fetchServices();
   }, []);
 
-  const openModal = (service) => {
-    setSelectedService(service);
-  };
+  const indexOfLastService = currentPage * servicesPerPage;
+  const indexOfFirstService = indexOfLastService - servicesPerPage;
+  const currentServices = services
+    .filter((service) =>
+      service.serviceName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice(indexOfFirstService, indexOfLastService);
 
-  const closeModal = () => {
-    setSelectedService(null);
-  };
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div>
+      <input
+        type="text"
+        placeholder="Search by service name..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500"
+      />
       <table className="min-w-full">
         <thead>
           <tr>
@@ -59,7 +70,7 @@ const ServiceTable = () => {
           </tr>
         </thead>
         <tbody className="text-xs bg-white divide-y divide-gray-200">
-          {services.map((service) => (
+          {currentServices.map((service) => (
             <tr key={service.id}>
               <td className="px-6 py-4 font-medium whitespace-no-wrap">
                 {service.serviceName}
@@ -67,7 +78,6 @@ const ServiceTable = () => {
               <td className="px-6 py-4 font-medium whitespace-no-wrap">
                 {service.turnaroundtime}
               </td>
-
               <td className="px-6 py-4 w-fit">
                 {service.status === "active" && (
                   <div className="flex items-center px-4 py-2 bg-green-500 rounded-full w-fit">
@@ -107,46 +117,24 @@ const ServiceTable = () => {
         </tbody>
       </table>
 
-      {selectedService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black opacity-50"></div>
-          <div className="z-50 p-8 bg-white rounded-lg">
-            <h2 className="mb-4 text-lg font-bold">
-              {selectedService.serviceName} Prices
-            </h2>
-            <table className="min-w-full">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
-                    Center
-                  </th>
-                  <th className="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase bg-gray-50">
-                    Price
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {selectedService.prices.map((price, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-no-wrap">
-                      {price.centerName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-no-wrap">
-                      {price.price}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button
-              onClick={closeModal}
-              className="mt-4 text-blue-500 hover:text-blue-700 focus:outline-none"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <div>
+        {services.length > servicesPerPage && (
+          <ul className="flex justify-center mt-4">
+            {[...Array(Math.ceil(services.length / servicesPerPage))].map(
+              (item, index) => (
+                <li key={index}>
+                  <button
+                    onClick={() => paginate(index + 1)}
+                    className="px-3 py-1 mr-1 font-semibold text-gray-800 rounded cursor-pointer focus:outline-none"
+                  >
+                    {index + 1}
+                  </button>
+                </li>
+              )
+            )}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

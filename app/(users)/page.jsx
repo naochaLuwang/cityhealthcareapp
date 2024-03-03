@@ -70,6 +70,7 @@ const Home = () => {
             {popularServices.map((service) => (
               <TestCard
                 key={service.id}
+                id={service.id}
                 testName={service.serviceName}
                 description={service.description}
                 turnaroundTime={service.department}

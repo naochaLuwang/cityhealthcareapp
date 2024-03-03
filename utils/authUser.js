@@ -35,7 +35,7 @@ export const withAuth = (WrappedComponent) => {
     }, [user, loading, router]);
 
     if (loading) {
-      return <div>Loading...</div>;
+      return <div>Loading files...</div>;
     }
 
     if (!user) {

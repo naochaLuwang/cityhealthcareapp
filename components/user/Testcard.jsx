@@ -2,7 +2,7 @@ import React from "react";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-const TestCard = ({ testName, description, turnaroundTime, imageUrl }) => {
+const TestCard = ({ testName, description, turnaroundTime, imageUrl, id }) => {
   return (
     <div className="flex flex-col h-auto p-6 mt-10 space-y-2 border rounded-lg shadow-md w-80">
       <h1 className="text-base font-semibold tracking-wider text-slate-900">
@@ -22,7 +22,10 @@ const TestCard = ({ testName, description, turnaroundTime, imageUrl }) => {
         >
           Book home collection
         </Link>
-        <Link href="/" className="text-sm font-semibold text-blue-900">
+        <Link
+          href={`/services/${id}`}
+          className="text-sm font-semibold text-blue-900"
+        >
           Know more
         </Link>
       </div>
